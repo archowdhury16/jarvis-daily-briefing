@@ -149,12 +149,55 @@ def read_keychain(service: str, account: str) -> str:
     return r.stdout.strip() if r.returncode == 0 else ""
 
 
+def _git_email() -> str:
+    try:
+        return subprocess.run(
+            ["git", "config", "--global", "user.email"],
+            capture_output=True, text=True, timeout=2,
+        ).stdout.strip()
+    except (subprocess.TimeoutExpired, OSError, FileNotFoundError):
+        return ""
+
+
+def _candidate_accounts(account: str) -> list[str]:
+    """Expand the configured `keychain_account` into a list of candidates to try.
+
+    - "auto"      → git email, $USER, "default"
+    - "$USER"     → expands to current login username
+    - "$EMAIL"    → expands to git config user.email
+    - anything else → used as-is (single candidate)
+
+    Lets the same config.toml work across machines / users without edits.
+    """
+    if not account or account == "auto":
+        out = []
+        e = _git_email()
+        if e:
+            out.append(e)
+        u = os.environ.get("USER", "")
+        if u:
+            out.append(u)
+        out.append("default")
+        return out
+    if account == "$USER":
+        return [os.environ.get("USER", "default")]
+    if account == "$EMAIL":
+        return [_git_email() or "default"]
+    return [account]
+
+
 def resolve_secret(source: str, service: str, account: str, env_var: str) -> str:
+    """Resolve a secret from env or keychain. The configured *account* may be
+    a literal string, a placeholder (`$USER`, `$EMAIL`), or `auto` (try
+    several common conventions). Falls back to the env var on any miss."""
     if source == "env":
         return os.environ.get(env_var, "")
     if source == "keychain":
-        v = read_keychain(service, account)
-        return v or os.environ.get(env_var, "")
+        for candidate in _candidate_accounts(account):
+            v = read_keychain(service, candidate)
+            if v:
+                return v
+        return os.environ.get(env_var, "")
     return os.environ.get(env_var, "")
 
 

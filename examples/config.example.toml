@@ -18,20 +18,26 @@ model_id = "eleven_turbo_v2_5"
 # stability + similarity_boost between 0.0 and 1.0
 stability = 0.5
 similarity_boost = 0.75
-# Where to read the API key from:
-#   - "keychain" (macOS only): security find-generic-password -s <service> -a <account> -w
-#   - "env": $ELEVENLABS_API_KEY
 #
-# IMPORTANT: keychain_service + keychain_account MUST exactly match the values
-# you passed to `security add-generic-password`. Common store-it commands:
+# ─── Where to read the API key from ───
+# key_source: "keychain" (macOS) or "env" (any OS)
 #
-#   security add-generic-password -s elevenlabs -a default -w 'sk_xxx'
-#   security add-generic-password -s elevenlabs -a you@example.com -w 'sk_xxx'
+# keychain_account modes (lets the same config.toml work for any user):
+#   "auto"            try git user.email → $USER → "default" in order
+#   "$USER"           current login username
+#   "$EMAIL"          git config user.email
+#   "you@example.com" literal account name (whatever you passed to -a)
+#   "default"         literal account name "default"
 #
-# Then set the same -s / -a values below.
+# Examples of how to store the token (any of these will work with "auto"):
+#   security add-generic-password -s elevenlabs -a default       -w 'sk_xxx'
+#   security add-generic-password -s elevenlabs -a "$USER"       -w 'sk_xxx'
+#   security add-generic-password -s elevenlabs -a you@email.com -w 'sk_xxx'
+#
+# Falls back to $ELEVENLABS_API_KEY env var if keychain has no match.
 key_source = "keychain"
 keychain_service = "elevenlabs"
-keychain_account = "default"
+keychain_account = "auto"
 
 [jira]
 # Optional. If host+email+token are set, tickets are fetched from Atlassian REST API
@@ -42,11 +48,11 @@ keychain_account = "default"
 host = ""           # e.g. "yourorg.atlassian.net"
 email = ""          # your Atlassian account email
 jql = "assignee = currentUser() AND sprint in openSprints() AND statusCategory != Done ORDER BY priority DESC, updated DESC"
-# Same keychain rule as above — match the -s / -a you used to store the token:
-#   security add-generic-password -s atlassian -a you@example.com -w 'ATATT...'
+# Same modes as ElevenLabs above. Falls back to $JIRA_API_TOKEN env var.
+#   security add-generic-password -s atlassian -a you@email.com -w 'ATATT...'
 key_source = "keychain"
 keychain_service = "atlassian"
-keychain_account = "default"
+keychain_account = "auto"
 max_results = 50
 
 [honorific]

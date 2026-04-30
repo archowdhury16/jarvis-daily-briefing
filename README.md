@@ -48,15 +48,17 @@ cp examples/config.example.toml config.toml
 
 ### TTS — ElevenLabs (recommended)
 
-1. Sign up at https://elevenlabs.io (10K characters/month free, ~50 daily briefings)
+1. Sign up at https://elevenlabs.io (10K characters/month free, ~7 daily briefings; $5/mo Starter for 30K)
 2. Generate an API key
-3. Either:
-   - **macOS Keychain** (recommended): `security add-generic-password -s elevenlabs -a default -w 'sk_...'`
-   - **Env var**: `export ELEVENLABS_API_KEY=sk_...`
+3. Store it. Two equivalent options — pick one:
+   - **macOS Keychain** (recommended): `security add-generic-password -s elevenlabs -a "$(git config user.email)" -w 'sk_...'`
+   - **Env var**: `export ELEVENLABS_API_KEY=sk_...` (works on Linux/Windows too)
 4. Pick a voice — set `voice_id` in `config.toml`. Defaults that work well:
    - `JBFqnCBsd6RMkjVDRZzb` — George (warm British baritone, Jarvis-like)
    - `onwK4e9ZLuTAKqWW03F9` — Daniel (British, well-spoken)
    - `IKne3meq5aSn9XLyUdCD` — Charlie (Australian, butler vibe)
+
+The shipped `config.example.toml` uses `keychain_account = "auto"`, which tries `git config user.email` → `$USER` → `default` in order. So whether you stored the token under your email, your username, or `default`, the script finds it without any config edits. Override with a literal name if you've stored it under something else.
 
 ### TTS — Kokoro local fallback (optional)
 
