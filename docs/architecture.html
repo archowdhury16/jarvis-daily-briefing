@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Jarvis Daily Briefing — Architecture</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  html { font-size: 10.5pt; }
+  body {
+    font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #1a1d24;
+    line-height: 1.55;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 {
+    font-size: 22pt;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 4pt;
+    color: #0e1218;
+  }
+  h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+    margin: 22pt 0 8pt;
+    padding-top: 6pt;
+    border-top: 1px solid #d6dae3;
+    color: #0e1218;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    margin: 14pt 0 4pt;
+    color: #1a1d24;
+    page-break-after: avoid;
+  }
+  p { margin: 0 0 8pt; }
+  .lede { color: #5a6273; font-size: 10pt; margin-bottom: 18pt; max-width: 60em; }
+  .meta { color: #8a91a3; font-size: 8.5pt; margin-bottom: 22pt; font-variant-numeric: tabular-nums; }
+  ul, ol { margin: 4pt 0 10pt 1em; padding-left: 1em; }
+  li { margin: 2pt 0; }
+  code, pre { font-family: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; }
+  code { background: #eef0f4; padding: 1pt 4pt; border-radius: 3pt; font-size: 9pt; }
+  pre {
+    background: #f6f7fa;
+    border: 1px solid #e2e5ec;
+    border-radius: 4pt;
+    padding: 9pt 11pt;
+    font-size: 8.5pt;
+    line-height: 1.4;
+    overflow-x: auto;
+    page-break-inside: avoid;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table {
+    border-collapse: collapse;
+    margin: 8pt 0 12pt;
+    width: 100%;
+    font-size: 9.5pt;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border-bottom: 1px solid #d6dae3;
+    padding: 5pt 8pt;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f0f2f6; font-weight: 600; border-bottom: 2px solid #c0c5d1; }
+  blockquote {
+    margin: 8pt 0;
+    padding: 4pt 12pt;
+    border-left: 3px solid #ffb070;
+    color: #5a6273;
+    background: #fbf7f1;
+    border-radius: 0 4pt 4pt 0;
+    font-size: 9.5pt;
+  }
+  .header-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 2pt; flex-wrap: wrap;
+  }
+  .header-row .pill {
+    font-size: 8pt; letter-spacing: 0.18em; text-transform: uppercase;
+    color: #2a6dd9; font-weight: 600;
+  }
+  .ascii {
+    font-family: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 8pt;
+    line-height: 1.3;
+    background: #f6f7fa;
+    border: 1px solid #e2e5ec;
+    border-radius: 4pt;
+    padding: 9pt 11pt;
+    page-break-inside: avoid;
+    white-space: pre;
+  }
+  .footer {
+    margin-top: 30pt;
+    padding-top: 10pt;
+    border-top: 1px solid #d6dae3;
+    color: #8a91a3;
+    font-size: 8.5pt;
+  }
+  .keep-together { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<div class="header-row">
+  <span class="pill">DESIGN DOC</span>
+  <span class="pill">v0.1</span>
+</div>
+<h1>Jarvis Daily Briefing &mdash; Architecture</h1>
+<p class="lede">A self-contained daily-briefing artifact: a polished HTML page with an audio-reactive 3D orb that reads you a Jarvis-style spoken summary of time, weather, top India news, and your sprint board for the day. This document explains the design decisions and the trade-offs that shaped them.</p>
+<p class="meta">Repository: <code>github.com/archowdhury16/jarvis-daily-briefing</code>  &middot;  Author: Arindam Chowdhury  &middot;  Generated 30 April 2026</p>
+
+<h2>1. The constraint that shaped everything</h2>
+<p>The naive design &mdash; <em>"a launchd cron job that hits Jira's REST API, generates a briefing, and plays audio"</em> &mdash; is impossible in this environment because of three independent walls:</p>
+<table>
+  <thead><tr><th>Wall</th><th>Where it bit</th><th>Symptom</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Q2's gateway rejects Basic Auth</strong></td><td>Atlassian REST <code>/myself</code> &rarr; 401</td><td><code>WWW-Authenticate: OAuth realm</code> header &mdash; Basic Auth disabled corp-wide</td></tr>
+    <tr><td><strong>Personal API tokens have no Jira scope</strong></td><td>Token creation page</td><td>Only <code>read:me</code> / <code>read:account</code> scopes available</td></tr>
+    <tr><td><strong>TLS-inspecting proxy re-signs every cert</strong></td><td>httpx, Node, urllib3</td><td><code>SELF_SIGNED_CERT_IN_CHAIN</code> against every API</td></tr>
+  </tbody>
+</table>
+<p>The only thing that <em>can</em> read Jira is <strong>Claude TUI</strong> (it has an OAuth-authenticated <code>claude.ai Atlassian</code> MCP server). Headless <code>claude -p</code> doesn't inherit those MCPs. Cowork <em>cloud</em> scheduled tasks have MCP but run in a sandbox with no access to the Mac's speakers or filesystem.</p>
+<p>That's why no single binary can do the whole job. The architecture is a <strong>deliberate split</strong> between fetch and render.</p>
+
+<h2>2. The pipeline</h2>
+<div class="ascii">                       ╭─────────────────────────────╮
+                       │  USER TRIGGER (3 surfaces)  │
+                       ╰─────────────┬───────────────╯
+                                     │
+        ┌────────────────────────────┼────────────────────────────┐
+        │                            │                            │
+   /briefing                  Daily Briefing.command       briefing (last).webloc
+   (Claude TUI)               (desktop double-click)       (Chrome bookmark)
+        │                            │                            │
+   fresh tickets                stale tickets                 zero work —
+   via MCP                       (last fetched)            opens cached HTML
+        │                            │                            │
+        └─────────────┬──────────────┘                            │
+                      ▼                                           │
+            ┌──────────────────┐                                  │
+            │   briefing.py    │ ← single Python entry point      │
+            │   (the engine)   │                                  │
+            └────────┬─────────┘                                  │
+                     │                                            │
+        ┌────────────┼────────────┬─────────────┬─────────────┐   │
+        ▼            ▼            ▼             ▼             ▼   │
+    weather      news RSS      tickets       prose         TTS    │
+   open-meteo   Google News   JSON file     template      EL → KK │
+                              (or REST)     (no LLM)              │
+        │            │            │             │             │   │
+        └────────────┴────────────┼─────────────┴─────────────┘   │
+                                  ▼                               │
+                         ┌──────────────────┐                     │
+                         │  briefing.html   │ ← single 2.5MB file ┘
+                         │ (audio embedded  │
+                         │  as base64)      │
+                         └────────┬─────────┘
+                                  ▼
+                              [browser]
+                                  │
+                                  ▼
+                       ┌────────────────────┐
+                       │  Three.js orb +    │
+                       │  Web Audio API     │
+                       │  amp → shader      │
+                       │  uniform on click  │
+                       └────────────────────┘</div>
+
+<h2>3. The trigger surface &mdash; three entry points, one engine</h2>
+<p>The same <code>briefing.py</code> is invoked by all three triggers; what differs is <strong>how the tickets get there</strong>.</p>
+<ul>
+  <li><strong><code>/briefing</code> (Claude TUI)</strong> &mdash; the only path that gets fresh Jira data. The slash command is a markdown file at <code>~/.claude/commands/briefing.md</code> that tells Claude to call its Atlassian MCP, transform the response into our schema, write <code>tickets.json</code>, then shell out to <code>briefing.py</code>. Claude is the OAuth-authenticated reader here; the script just consumes the JSON.</li>
+  <li><strong><code>Daily Briefing.command</code></strong> (desktop) &mdash; a zsh wrapper that runs <code>briefing.py --tickets tickets.json</code>. Reuses whatever was fetched last, regenerates everything else. Useful for midday refreshes or when Claude is closed.</li>
+  <li><strong><code>Daily Briefing (last).webloc</code></strong> &mdash; pure replay. Opens the cached HTML directly in Chrome. Zero regeneration.</li>
+</ul>
+<p>The <code>briefing.py</code> engine is the same code path for all three &mdash; it doesn't care who fed it tickets.</p>
+
+<h2>4. The data fetch layer</h2>
+<p>Four independent fetchers with graceful degradation:</p>
+<ul>
+  <li><strong>Weather</strong> &mdash; <code>open-meteo.com/v1/forecast</code>, free, no key, no auth. Returns current temp, apparent, daily H/L. If it fails, the script aborts (cheap, fast, almost never down).</li>
+  <li><strong>News</strong> &mdash; Google News RSS (no key). Parsed via <code>xml.etree.ElementTree</code>. Filters out exam-result spam common in the IN feed. Strips trailing <code>" - Source"</code> suffix Google appends.</li>
+  <li><strong>Tickets</strong> &mdash; three modes selected at runtime: <code>--tickets path.json</code> (works behind any firewall), <code>[jira]</code> block + Basic-Auth REST (works for non-Q2 orgs), or <code>--no-tickets</code>.</li>
+  <li><strong>Time</strong> &mdash; <code>datetime.now(ZoneInfo(cfg.timezone))</code> &mdash; no fetch, just zone math.</li>
+</ul>
+<p>Each function takes <code>cfg</code> and a <code>verify</code> arg (truststore / CA bundle / <code>True</code>) and returns a dict or list. They're independent &mdash; adding a fifth source (calendar, oncall, etc.) is one new function plus a sentence in <code>build_prose()</code>.</p>
+
+<h2>5. Prose generation &mdash; deterministic, no LLM</h2>
+<p>A deliberate choice, not a limitation. <code>build_prose(cfg, weather, news, tickets, now)</code> is a pure function that assembles the briefing from f-string templates. Why no LLM:</p>
+<ol>
+  <li><strong>Reproducibility</strong> &mdash; same inputs, identical prose. No "today George got chatty" variance.</li>
+  <li><strong>Latency</strong> &mdash; runs in &lt;1ms. An LLM call would add 2&ndash;5s and a network dependency.</li>
+  <li><strong>No leakage</strong> &mdash; ticket summaries never leave your laptop until the TTS step (and even there, only the final prose, not raw JSON).</li>
+  <li><strong>Determinism for TTS chunking</strong> &mdash; same prose every time means audio caching could work later if needed.</li>
+</ol>
+<p>The template handles three structural decisions: greeting word from hour-of-day; priority-tier sort (Highest &rarr; P4 &rarr; None) with overdue items floated to the top; ticket-key spelling-out (<code>GD-11065</code> &rarr; <em>"G D dash one one zero six five"</em>) so TTS pronounces them as identifiers, not as one mangled word.</p>
+
+<h2>6. TTS layer &mdash; primary + fallback chain</h2>
+<div class="ascii">synthesize_audio(text)
+    │
+    ├─► try_elevenlabs(text)          [primary: George, ~1.3K chars/run]
+    │       └── HTTPS POST → eleven_turbo_v2_5
+    │           returns bytes (mp3) → return (bytes, "audio/mpeg")
+    │       ✗ on quota / network / missing-key → fall through
+    │
+    └─► try_kokoro(text)              [fallback: am_adam, fully local]
+            └── KPipeline → numpy float32 frames → soundfile WAV
+                returns bytes (wav) → return (bytes, "audio/wav")
+            ✗ on import failure → return None (silent artifact, with warning)</div>
+<p>Two-tier fallback because: ElevenLabs is best-quality but quota-limited (10K chars free, ~7 daily briefings); Kokoro keeps you running indefinitely on free tier; both share the same calling contract &mdash; bytes + MIME type &mdash; so the artifact builder doesn't care which won. The MIME type matters: the embedded <code>&lt;audio&gt;</code> tag uses <code>data:&#36;{mime};base64,&#36;{b64}</code>. Browsers won't play wav as mpeg or vice versa.</p>
+
+<h2>7. The artifact &mdash; the clever bit</h2>
+<p><code>build_artifact()</code> reads <code>templates/briefing.html</code>, replaces <code>__INJECT_DATA__</code> with <code>json.dumps(data)</code>, writes the result. The trick is <strong>what's in <code>data</code></strong>:</p>
+<pre><code>{
+  "greeting": "Good morning",
+  "weather": {…},
+  "news": [{…},…],
+  "tickets": [{…},…],
+  "audio_b64": "&lt;1.7MB of base64&gt;",
+  "audio_mime": "audio/mpeg",
+  …
+}</code></pre>
+<p>The audio is <strong>embedded as base64</strong> directly into the HTML. The artifact is a single 2.5 MB file with <strong>zero external network calls when you open it</strong>. It works offline, behind any firewall, on a plane. You can email it. You can open it on a phone. The orb shader resources are loaded from CDN once and cached forever (Three.js + Inter font); they're not gated.</p>
+<p>This is why the same file works as <code>/briefing</code> output, <code>Daily Briefing.command</code> output, and <code>(last).webloc</code> replay target &mdash; it's literally the same self-contained file.</p>
+
+<h2>8. Audio-reactive orb &mdash; the rendering pipeline</h2>
+<div class="ascii">  click orb
+     │
+     ▼
+  audio.play()
+     │
+     ▼
+  Web Audio API: createMediaElementSource → AnalyserNode (fftSize=128, smoothing=0.8)
+     │
+     ▼ (every frame, ~60 FPS via requestAnimationFrame)
+     │
+  analyser.getByteFrequencyData(dataArr)  → 64 frequency bins
+     │
+     ▼
+  avg of bins[2..29]  (low-mid, where speech energy lives)
+     │
+     ▼
+  exponential smoothing: amp += (target - amp) * dt * 8
+     │
+     ▼
+  uniforms.uAmp.value = amp     ← passed to GPU
+     │
+     ▼
+  ┌─────────── vertex shader ───────────┐    ┌──── fragment shader ────┐
+  │ disp = 0.18·snoise(p·1.4)           │    │ fresnel = (1-N·V)²       │
+  │      + 0.10·snoise(p·2.7)           │    │ col = mix(A,B) iridescent│
+  │      + uAmp·0.45·snoise(p·4.0)      │    │ col += highlight + rim   │
+  │ pos = pos + normal * disp           │    │ col *= 0.72  (we tuned   │
+  └─────────────────────────────────────┘    │   brightness here)       │
+                                              └──────────────────────────┘</div>
+<p>Two key design choices in the shader:</p>
+<ul>
+  <li><strong>Brightness is not audio-reactive</strong> (anymore). Color multiply is constant <code>0.72</code>. Only motion (rotation speed, scale ~5%, surface displacement) reacts. This was the <em>"too bright while speaking"</em> fix.</li>
+  <li><strong>Simplex noise on three frequencies</strong> &mdash; gives the orb organic, non-repeating motion that doesn't look like a tessellation. The three octaves (1.4, 2.7, 4.0) layer detail; the third is the one that scales with <code>uAmp</code> so loud syllables make finer ripples.</li>
+</ul>
+
+<h2>9. What we tried that didn't work</h2>
+<p>This shaped the final design more than the requirements did:</p>
+<ul>
+  <li><strong>OpenJarvis local stack</strong> (Ollama + Kokoro + custom Jira connector). Built it. Works for everything except <em>getting Jira data</em> &mdash; Q2 blocks Basic Auth at the gateway. Sits unused on disk now.</li>
+  <li><strong>Cowork cloud scheduled task</strong>. Has MCP, runs on schedule. But sandboxed: cannot reach Mac speakers, cannot reliably write to user filesystem, ignored prompt updates due to caching. Disabled.</li>
+  <li><strong>Headless <code>claude -p</code> from launchd</strong>. Has speakers + filesystem. But doesn't inherit <code>claude.ai</code>-managed MCPs. Could work with manually-registered MCPs, but those need their own OAuth flow per machine.</li>
+  <li><strong>Atlassian REST + corporate CA bundle</strong>. Auth works (token recognized) but Q2 only allows <code>read:me</code>/<code>read:account</code> scopes for personal tokens, so all Jira queries return zero results.</li>
+  <li><strong>GLB 3D model in the orb slot</strong>. Reverted &mdash; the procedural shader sphere read better.</li>
+</ul>
+<p>The final architecture survives because it doesn't try to bridge worlds that can't be bridged. Claude TUI does the <em>one thing only it can do</em> (read Jira via authenticated MCP); everything else runs locally.</p>
+
+<h2>10. Limitations &amp; future moves</h2>
+<ul>
+  <li><strong><code>/briefing</code> requires Claude TUI to be running</strong> at trigger time. No truly autonomous 8 AM weekday firing. The launchd plist exists but is intentionally not loaded &mdash; without working auth, it'd produce empty tickets.</li>
+  <li><strong>ElevenLabs free tier is ~7 days</strong> of briefings. The Kokoro fallback is silent-graceful but quality drops. $5/mo is the painless answer when you're tired of the drop.</li>
+  <li><strong>Headlines are India-only by default</strong>. Easy to flip via <code>[news]</code> config (<code>rss_url</code>).</li>
+  <li><strong>No cache invalidation for the audio</strong>. If you <code>--no-tts</code> then later regenerate, you get fresh audio. But there's no "synthesize once per prose hash" optimization &mdash; would save ~1.3K chars per re-run if you swap weather mid-day. ~5 lines of code if it becomes load-bearing.</li>
+  <li><strong>Single user runtime</strong>. The repo is now portable to any user (after the <code>keychain_account = "auto"</code> change), but the runtime is single-tenant &mdash; one config.toml, one tickets.json. Multi-user would mean parametrizing paths or adding a <code>--profile</code> flag.</li>
+</ul>
+<blockquote>If you wanted to go further: a web-app version with server-side state and per-user OAuth would unlock truly autonomous schedules. But the local-only, self-contained design is what made this <em>quick</em> to ship and zero-cost to run.</blockquote>
+
+<div class="footer">
+  <strong>Jarvis Daily Briefing</strong> &middot; MIT license &middot; <code>github.com/archowdhury16/jarvis-daily-briefing</code>
+</div>
+
+</body>
+</html>

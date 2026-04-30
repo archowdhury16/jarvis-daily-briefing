@@ -149,6 +149,8 @@ briefing.py
 
 The template at [`templates/briefing.html`](templates/briefing.html) contains the entire UI: aurora background, hero with live clock, weather card, shader orb (Three.js), news list, sprint board, playback controls. All styles are inline; the only external resources are Google Fonts and Three.js via CDN.
 
+> 📄 **For the full design discussion** — including why the architecture is split between Claude TUI and a local Python engine, the TTS fallback chain, the audio-reactive shader pipeline, and the dead ends we explored along the way — see [**docs/architecture.pdf**](docs/architecture.pdf) (6 pages, 250 KB).
+
 ## Why this exists
 
 A real Jarvis-flavoured morning brief that:
