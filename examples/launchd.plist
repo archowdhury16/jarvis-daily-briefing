@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Daily briefing for weekday mornings.
+       Edit the paths below + the StartCalendarInterval times before installing. -->
+  <key>Label</key>
+  <string>com.jarvis.briefing</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <!-- Customise to taste:
+         - python path (use your project venv)
+         - working dir
+         - flags: --tickets, --open, --use-system-trust, etc. -->
+    <string>cd /Users/YOU/Documents/jarvis-daily-briefing && .venv/bin/python briefing.py --tickets tickets.json --open</string>
+  </array>
+
+  <!-- 8:30 AM, Monday-Friday, in Mac's local timezone -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>8</integer><key>Minute</key><integer>30</integer></dict>
+  </array>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/jarvis-briefing.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/jarvis-briefing.err.log</string>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

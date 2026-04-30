@@ -1,0 +1,10 @@
+# Core
+httpx>=0.27.0
+
+# Optional: corporate TLS-inspecting proxy support (uses system trust store)
+truststore>=0.9.0
+
+# Optional: Kokoro local TTS fallback
+# Uncomment these to enable local fallback when ElevenLabs is unavailable
+# kokoro>=0.7.0
+# soundfile>=0.12.0

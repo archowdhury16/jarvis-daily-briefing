@@ -1,0 +1,43 @@
+# Copy this to config.toml and edit. CLI flags override these values.
+
+[location]
+city = "Bangalore"
+lat = 12.97
+lon = 77.59
+timezone = "Asia/Kolkata"
+
+[news]
+# Google News RSS feed — change for a different country / topic
+rss_url = "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en"
+max_items = 5
+
+[elevenlabs]
+# British warm baritone, Jarvis-like — see ElevenLabs voices for alternatives
+voice_id = "JBFqnCBsd6RMkjVDRZzb"
+model_id = "eleven_turbo_v2_5"
+# stability + similarity_boost between 0.0 and 1.0
+stability = 0.5
+similarity_boost = 0.75
+# Where to read the API key from:
+#   - "keychain" (macOS only): security find-generic-password -s elevenlabs -a default -w
+#   - "env": $ELEVENLABS_API_KEY
+key_source = "keychain"
+keychain_service = "elevenlabs"
+keychain_account = "default"
+
+[jira]
+# Optional. If host+email+token are set, tickets are fetched from Atlassian REST API
+# (Basic Auth). Many corporate Atlassian instances block this — in that case, leave
+# host blank and pass --tickets path/to/tickets.json instead.
+host = ""           # e.g. "yourorg.atlassian.net"
+email = ""          # your Atlassian account email
+jql = "assignee = currentUser() AND sprint in openSprints() AND statusCategory != Done ORDER BY priority DESC, updated DESC"
+# Where to read the Jira token from (only used if host/email set):
+key_source = "keychain"
+keychain_service = "atlassian"
+keychain_account = "default"
+max_results = 50
+
+[honorific]
+# How the voice addresses you
+title = "sir"          # "sir", "ma'am", "boss", or any first name

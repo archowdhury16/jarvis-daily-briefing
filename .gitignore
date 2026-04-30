@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Local config — contains API key references / paths
+config.toml
+config.local.toml
+
+# Generated artifacts (audio is huge, regenerate per run)
+/briefing.html
+/briefing-data.json
+*.mp3
+*.wav
+
+# CA bundles (host-specific)
+*-ca-bundle.pem
+ca-bundle.pem
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/
+*.swp

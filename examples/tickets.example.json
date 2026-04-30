@@ -1,0 +1,38 @@
+[
+  {
+    "key": "PROJ-101",
+    "priority": "High",
+    "status": "In Development",
+    "type": "Task",
+    "due": "2026-04-30",
+    "summary": "Wire the new auth flow to the gateway",
+    "url": "https://yourorg.atlassian.net/browse/PROJ-101"
+  },
+  {
+    "key": "PROJ-87",
+    "priority": "P2",
+    "status": "In Review",
+    "type": "Bug",
+    "due": null,
+    "summary": "Fix race condition in payment retry handler",
+    "url": "https://yourorg.atlassian.net/browse/PROJ-87"
+  },
+  {
+    "key": "DOCS-42",
+    "priority": "P3",
+    "status": "Peer Review",
+    "type": "Story",
+    "due": null,
+    "summary": "Document the new webhook payload schema",
+    "url": "https://yourorg.atlassian.net/browse/DOCS-42"
+  },
+  {
+    "key": "INFRA-12",
+    "priority": "None",
+    "status": "Backlog",
+    "type": "Task",
+    "due": null,
+    "summary": "Investigate intermittent 502s from the staging LB",
+    "url": "https://yourorg.atlassian.net/browse/INFRA-12"
+  }
+]
