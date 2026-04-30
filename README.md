@@ -4,6 +4,8 @@ A self-contained daily briefing artifact: a polished HTML page with an audio-rea
 
 ![hero](https://img.shields.io/badge/runs-100%25%20local-blue) ![tts](https://img.shields.io/badge/voice-ElevenLabs%20%2B%20Kokoro%20fallback-orange) ![scope](https://img.shields.io/badge/data-Jira%20%2B%20open--meteo%20%2B%20Google%20News-success)
 
+![Briefing artifact — full layout](docs/screenshot-hero.png)
+
 ```
 $ python briefing.py --tickets examples/tickets.example.json --open
 ✓ weather fetched (32°C, clear)
@@ -11,6 +13,10 @@ $ python briefing.py --tickets examples/tickets.example.json --open
 ✓ ElevenLabs TTS rendered (1.9 MB, 75s)
 ✓ briefing.html written (2.6 MB) — opening in browser
 ```
+
+The orb is a Three.js icosahedron with a simplex-noise vertex shader and an iridescent fresnel fragment shader. While the audio plays, the Web Audio API's `AnalyserNode` samples low-mid frequencies and feeds the amplitude into the shader as a uniform — the orb's rotation, scale, and surface displacement react to the voice in real time:
+
+![3D shader orb closeup](docs/screenshot-orb.png)
 
 ## What you get
 
