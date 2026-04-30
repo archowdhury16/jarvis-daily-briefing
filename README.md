@@ -6,6 +6,12 @@ A self-contained daily briefing artifact: a polished HTML page with an audio-rea
 
 ![Briefing artifact — full layout](docs/screenshot-hero.png)
 
+### Demo
+
+<video src="https://github.com/archowdhury16/jarvis-daily-briefing/raw/main/docs/demo.mp4" controls width="720"></video>
+
+> _If the video doesn't render inline above, [click here to play](docs/demo.mp4)._
+
 ```
 $ python briefing.py --tickets examples/tickets.example.json --open
 ✓ weather fetched (32°C, clear)
