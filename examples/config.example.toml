@@ -19,20 +19,31 @@ model_id = "eleven_turbo_v2_5"
 stability = 0.5
 similarity_boost = 0.75
 # Where to read the API key from:
-#   - "keychain" (macOS only): security find-generic-password -s elevenlabs -a default -w
+#   - "keychain" (macOS only): security find-generic-password -s <service> -a <account> -w
 #   - "env": $ELEVENLABS_API_KEY
+#
+# IMPORTANT: keychain_service + keychain_account MUST exactly match the values
+# you passed to `security add-generic-password`. Common store-it commands:
+#
+#   security add-generic-password -s elevenlabs -a default -w 'sk_xxx'
+#   security add-generic-password -s elevenlabs -a you@example.com -w 'sk_xxx'
+#
+# Then set the same -s / -a values below.
 key_source = "keychain"
 keychain_service = "elevenlabs"
 keychain_account = "default"
 
 [jira]
 # Optional. If host+email+token are set, tickets are fetched from Atlassian REST API
-# (Basic Auth). Many corporate Atlassian instances block this — in that case, leave
-# host blank and pass --tickets path/to/tickets.json instead.
+# using HTTP Basic Auth. Many corporate Atlassian instances block this at the
+# gateway — symptom is `WWW-Authenticate: OAuth realm` on a 401. In that case,
+# leave host blank and pass --tickets path/to/tickets.json instead (or use the
+# /briefing slash command in Claude TUI to fetch via MCP).
 host = ""           # e.g. "yourorg.atlassian.net"
 email = ""          # your Atlassian account email
 jql = "assignee = currentUser() AND sprint in openSprints() AND statusCategory != Done ORDER BY priority DESC, updated DESC"
-# Where to read the Jira token from (only used if host/email set):
+# Same keychain rule as above — match the -s / -a you used to store the token:
+#   security add-generic-password -s atlassian -a you@example.com -w 'ATATT...'
 key_source = "keychain"
 keychain_service = "atlassian"
 keychain_account = "default"
