@@ -200,7 +200,7 @@
 </div>
 
 <script>
-const data = JSON.parse("__INJECT_DATA__");
+const data = __INJECT_DATA__;
 const HONORIFIC = (data.honorific || "sir");
 
 document.getElementById("hero-eyebrow").textContent = `JARVIS · DAILY BRIEFING · ${data.date_label.toUpperCase()}`;

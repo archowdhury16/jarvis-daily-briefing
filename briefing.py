@@ -483,7 +483,10 @@ def build_artifact(cfg: Config, weather: dict, news: list[dict], tickets: list[d
         "audio_mime": audio_mime,
     }
     template = TEMPLATE_PATH.read_text()
-    final = template.replace('"__INJECT_DATA__"', json.dumps(data))
+    # Inject as a JS object literal (template uses `const data = __INJECT_DATA__;`),
+    # not as a string passed to JSON.parse — embedding a serialized object literal
+    # directly is both correct and faster than parsing a string at load time.
+    final = template.replace("__INJECT_DATA__", json.dumps(data))
     out_path.write_text(final)
     print(f"✓ briefing.html written ({out_path.stat().st_size:,} bytes) -> {out_path}", file=sys.stderr)
 
